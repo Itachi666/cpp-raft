@@ -34,6 +34,7 @@ int main(int argc, char **argv) {
         Address self = get_addr_by_str(argv[2]);
         vector<Address> partner;
 
+
         for (int i = 3; i < argc; i++) {
             partner.push_back(get_addr_by_str(argv[i]));
         }
