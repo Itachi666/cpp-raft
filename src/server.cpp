@@ -11,6 +11,7 @@
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <unistd.h>
+#include <arpa/inet.h>
 
 #define MAXLINE 4096
 
@@ -25,12 +26,10 @@ struct MyException : public std::exception
 
 
 int main(int argc, char **argv) {
-    int listenfd, connfd;
+    int listenfd;
     struct sockaddr_in servaddr;
-    char buff[4096];
-    int n;
 
-    if ((listenfd = socket(AF_INET, SOCK_STREAM, 0)) == -1) {
+    if ((listenfd = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP)) == -1) {
         printf("create socket error: %s(errno: %d)\n", strerror(errno), errno);
         exit(0);
     }
@@ -45,21 +44,25 @@ int main(int argc, char **argv) {
         exit(0);
     }
 
-    if (listen(listenfd, 10) == -1) {
-        printf("listen socket error: %s(errno: %d)\n", strerror(errno), errno);
-        exit(0);
-    }
+    struct sockaddr_in remoteAddr;
+    socklen_t nAddrLen=sizeof(remoteAddr);
 
     printf("======waiting for client's request======\n");
     while (true) {
         try {
-            if ((connfd = accept(listenfd, (struct sockaddr *) nullptr, nullptr)) == -1)
+            char recvData[255];
+            int ret = recvfrom(listenfd, recvData, MAXLINE, 0, (struct sockaddr*) &remoteAddr, &nAddrLen);
+            if (ret > 0)
+            {
+                recvData[ret] = 0x00;
+                printf("Get a connect: %s \r\n",inet_ntoa(remoteAddr.sin_addr));
+                std::cout<<recvData<<std::endl;
+            }
+            else
                 throw MyException();
 
-            n = recv(connfd, buff, MAXLINE, 0);
-            buff[n] = '\0';
-            printf("recv msg from client: %s\n", buff);
-            close(connfd);
+            const char * sendData = "One UDP package which come from server\n";
+            sendto(listenfd, sendData,strlen(sendData), 0, (sockaddr *)&remoteAddr, nAddrLen);
         }
         catch (MyException& e) {
             std::cout << e.what() << std::endl;
