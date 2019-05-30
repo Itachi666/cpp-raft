@@ -7,6 +7,8 @@
 
 #include <iostream>
 
+Address::Address(std::string s, int p) : ip{std::move(s)}, port{p} {}
+
 Node::Node(Address &saddr, std::vector<Address> &paddr) : self_addr(saddr), part_addrs(paddr) {
 
 }

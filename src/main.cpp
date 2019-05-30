@@ -1,3 +1,11 @@
+/**********************************************************************
+ * Copyright (C) 2019 Niujx Ltd. All rights reserved.
+ *
+ * @Author: Niujx
+ * @Email: niujx666@foxmail.com
+ *
+ * Description: A C++ implementation(Demo) of RAFT consensus algorithm.
+ **********************************************************************/
 #include <iostream>
 #include <cstdio>
 #include <string>
@@ -34,7 +42,7 @@ int main(int argc, char **argv) {
         node.output();
     }
 
-    string test = "{\"id\":1,\"name\":\"kurama\"}";
+    string test = R"({"id":1,"name":"kurama"})";
     Json::Reader reader;
     Json::Value value;
     if (reader.parse(test, value)) {

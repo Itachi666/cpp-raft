@@ -8,12 +8,13 @@
 #include <string>
 #include <vector>
 #include <ctime>
+#include <utility>
 
 struct Address {
     std::string ip;
     int port;
 
-    Address(std::string s = "", int p = 0) : ip(std::move(s)), port(p) {};
+    explicit Address(std::string s = "", int p = 0);
 };
 
 struct {
