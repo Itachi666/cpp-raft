@@ -11,13 +11,17 @@
 class Log {
 public:
     Log() = default;
+
+    ~Log() = default;
+
     void add();
 };
 
 class BaseLog : public Log {
 public:
-
     BaseLog() = default;
+
+    ~BaseLog() = default;
 };
 
 #endif //RAFT_LOG_H

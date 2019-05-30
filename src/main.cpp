@@ -30,8 +30,8 @@ int main(int argc, char **argv) {
             partner.push_back(get_addr_by_str(argv[i]));
         }
 
-        for (auto item:partner)
-            cout<<item.ip<<' '<<item.port<<endl;
+        Node node(self, partner);
+        node.output();
     }
 
     string test = "{\"id\":1,\"name\":\"kurama\"}";
@@ -44,8 +44,6 @@ int main(int argc, char **argv) {
 
         }
     }
-
-    Node node;
 
     return 0;
 }
