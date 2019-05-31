@@ -7,8 +7,11 @@
 
 #include <string>
 #include <vector>
+#include <map>
 #include <ctime>
 #include <utility>
+
+#include "Log.h"
 
 struct Address {
     std::string ip;
@@ -29,6 +32,12 @@ public:
 
     ~Node() = default;
 
+    bool isLeader() { return state == _STATE.LEADER; };
+
+    int getLeader() { return state; };
+
+    bool isReadOnlyNeedAppendCommend() { return }
+
     void output();
 
 private:
@@ -37,12 +46,25 @@ private:
     int state = _STATE.FOLLOWER;
     int votes_count = 0;
     Address leader;
+    Address votedFor;
+
+    int currentTerm = 0;
+    int votesCount = 0;
+    BaseLog log;
+
+    int commitIndex = 0;
+    int lastApplied = 0;
+    int leaderCommitIndex = 0;
+
+    std::map<Address, int> nextIndex;
+    std::map<Address, int> matchIndex;
+
+    bool debug = false;
 
     time_t now = clock();
     time_t election_dl = now + genTimedl();
+
     time_t genTimedl();
-
-
 };
 
 

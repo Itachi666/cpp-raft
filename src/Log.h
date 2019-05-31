@@ -13,7 +13,7 @@ public:
 
     ~Log() = default;
 
-    static void add();
+    virtual void add();
 };
 
 class BaseLog : public Log {
@@ -21,6 +21,15 @@ public:
     BaseLog() = default;
 
     ~BaseLog() = default;
+
+    void add() override;
+
+    int length();
+
+    void clear();
+
+private:
+    std::vector<int> log;
 };
 
 #endif //RAFT_LOG_H

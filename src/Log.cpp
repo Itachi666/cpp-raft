@@ -9,3 +9,15 @@ using namespace std;
 void Log::add() {
     cout<<"Hello"<<endl;
 }
+
+void BaseLog::add() {
+    cout<<"Hello BaseLog"<<endl;
+}
+
+void BaseLog::clear() {
+    this->log.clear();
+}
+
+int BaseLog::length() {
+    return this->log.size();
+}
