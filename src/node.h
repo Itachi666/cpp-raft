@@ -10,6 +10,7 @@
 #include <map>
 #include <ctime>
 #include <utility>
+#include <json/json.h>
 
 #include "Log.h"
 
@@ -36,28 +37,34 @@ public:
 
     int getLeader() { return state; };
 
-    bool isReadOnlyNeedAppendCommend() { return }
+    bool isReadOnlyNeedAppendCommend() { return needLastApplied>lastApplied; };
+
+    void tick();
+
+    void messageRecv(Address addr, Json::Value msg);
+
+    void becomeLeader();
+
+    void Debug(bool flag);
 
     void output();
 
 private:
-    Address self_addr;
+    Address self_addr,leader,votedFor;
     std::vector<Address> part_addrs;
+
     int state = _STATE.FOLLOWER;
     int votes_count = 0;
-    Address leader;
-    Address votedFor;
 
-    int currentTerm = 0;
-    int votesCount = 0;
     BaseLog log;
 
-    int commitIndex = 0;
-    int lastApplied = 0;
-    int leaderCommitIndex = 0;
+    int currentTerm = 0, votesCount = 0;
 
-    std::map<Address, int> nextIndex;
-    std::map<Address, int> matchIndex;
+    int needLastApplied = 0;
+
+    int commitIndex = 0, lastApplied = 0, leaderCommitIndex = 0;
+
+    std::map<Address, int> nextIndex, matchIndex;
 
     bool debug = false;
 

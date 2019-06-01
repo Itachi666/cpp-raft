@@ -9,15 +9,33 @@
 Address::Address(std::string s, int p) : ip{std::move(s)}, port{p} {}
 
 Node::Node(Address &saddr, std::vector<Address> &paddr) : self_addr(saddr), part_addrs(paddr) {
-    if (this->log.length()==0)
+    if (this->log.length() == 0)
         this->log.add();
+}
+
+void Node::Debug(const bool flag) {
+    debug = flag;
+}
+
+void Node::tick() {
+    now = clock();
+}
+
+void Node::messageRecv(Address addr, Json::Value msg) {
+    now = clock();
+}
+
+void Node::becomeLeader() {
+    leader = self_addr;
+    state = _STATE.LEADER;
+
 }
 
 time_t Node::genTimedl() {
     int tmin = 500, tmax = 1500;
-    return tmin +  (random() % (tmax - tmin));
+    return tmin + (random() % (tmax - tmin));
 }
 
 void Node::output() {
-    std::cout<<now<<" "<<election_dl<<std::endl;
+    std::cout << now << " " << election_dl << std::endl;
 }
