@@ -36,10 +36,17 @@ Address get_addr_by_str(char *s) {
     return addr;
 }
 
-struct sockaddr_in servaddr, remoteAddr;
+int udp_socket;
 
-void send_to(Json::Value msg, int udp_socket) {
+void send_to(Json::Value msg, Address& addr) {
     string buff = msg.toStyledString();
+
+    cout<<buff<<endl;
+    struct sockaddr_in remoteAddr;
+    remoteAddr.sin_family = AF_INET;
+    remoteAddr.sin_addr.s_addr = inet_addr(addr.ip.c_str());
+    remoteAddr.sin_port=htons(addr.port);
+
     sendto(udp_socket, buff.c_str(), buff.length(), 0, (sockaddr *) &remoteAddr, sizeof(remoteAddr));
 }
 
@@ -77,7 +84,8 @@ int main(int argc, char **argv) {
             partner.push_back(get_addr_by_str(argv[i]));
         }
 
-        int udp_socket = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
+        udp_socket = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
+        struct sockaddr_in servaddr, remoteAddr;
 
         if (udp_socket < 0) {
             printf("create socket error: %s(errno: %d)\n", strerror(errno), errno);
@@ -94,7 +102,7 @@ int main(int argc, char **argv) {
             return 0;
         }
 
-        struct timeval timeout = {10, 500};//0.5s
+        struct timeval timeout = {0, 500};//0.5s
         setsockopt(udp_socket, SOL_SOCKET, SO_SNDTIMEO, (const char *) &timeout, sizeof(timeout));
         setsockopt(udp_socket, SOL_SOCKET, SO_RCVTIMEO, (const char *) &timeout, sizeof(timeout));
 
@@ -126,17 +134,17 @@ int main(int argc, char **argv) {
                     throw TimeoutExecption();
 
                 string t=R"({"ret": 888, "err": "One UDP package which come from server"})";
-                const char *sendData = t.c_str();
-                sendto(udp_socket, sendData, strlen(sendData), 0, (sockaddr *) &remoteAddr, nAddrLen);
+
+
+
+                //sendto(udp_socket, sendData, strlen(sendData), 0, (sockaddr *) &remoteAddr, nAddrLen);
                 cout<<"Send success"<<endl;
             }
             catch (TimeoutExecption &e) {
                 std::cout << e.what() << std::endl;
                 break;
             }
-
         }
-
         node.output();
     }
 

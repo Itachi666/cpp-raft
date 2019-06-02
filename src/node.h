@@ -19,6 +19,8 @@ struct Address {
     int port;
 
     explicit Address(std::string s = "NULL", int p = 0);
+
+    std::string toString();
 };
 
 struct {
@@ -33,7 +35,7 @@ public:
 
     ~Node() = default;
 
-    void setSendFunc(void (*func)(Json::Value, int));
+    void setSendFunc(void (*func)(Json::Value, Address &));
 
     void setExecFunc(void (*func)(std::string));
 
@@ -57,7 +59,8 @@ private:
     Address self_addr, leader, votedFor;
     std::vector<Address> part_addrs;
 
-    void (*_send)(Json::Value, int) = nullptr;
+    void (*_send)(Json::Value, Address &) = nullptr;
+
     void (*_exec)(std::string) = nullptr;
 
     int state = _STATE.FOLLOWER;
@@ -71,14 +74,18 @@ private:
 
     int commitIndex = 0, lastApplied = 0, leaderCommitIndex = 0;
 
-    std::map<Address, int> nextIndex, matchIndex;
+    std::map<std::string, int> nextIndex, matchIndex;
 
     bool debug = false;
 
-    time_t now = clock();
+    time_t now = clock(), newAppendEntriesTime=clock();
     time_t election_dl = now + genTimedl();
 
     time_t genTimedl();
+
+    void sendAppendEntriesReq();
+
+    void sendAppendEntriesRsp(Address &addr, int next_index = -1, bool reset = false, bool success = false);
 };
 
 
