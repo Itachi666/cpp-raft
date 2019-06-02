@@ -18,7 +18,7 @@ struct Address {
     std::string ip;
     int port;
 
-    explicit Address(std::string s = "", int p = 0);
+    explicit Address(std::string s = "NULL", int p = 0);
 };
 
 struct {
@@ -33,11 +33,15 @@ public:
 
     ~Node() = default;
 
+    void setSendFunc(void (*func)(Json::Value, int));
+
+    void setExecFunc(void (*func)(std::string));
+
     bool isLeader() { return state == _STATE.LEADER; };
 
     int getLeader() { return state; };
 
-    bool isReadOnlyNeedAppendCommend() { return needLastApplied>lastApplied; };
+    bool isReadOnlyNeedAppendCommend() { return needLastApplied > lastApplied; };
 
     void tick();
 
@@ -45,13 +49,16 @@ public:
 
     void becomeLeader();
 
-    void Debug(bool flag);
+    void Debug(bool flag = true);
 
     void output();
 
 private:
-    Address self_addr,leader,votedFor;
+    Address self_addr, leader, votedFor;
     std::vector<Address> part_addrs;
+
+    void (*_send)(Json::Value, int) = nullptr;
+    void (*_exec)(std::string) = nullptr;
 
     int state = _STATE.FOLLOWER;
     int votes_count = 0;

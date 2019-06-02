@@ -17,6 +17,14 @@ void Node::Debug(const bool flag) {
     debug = flag;
 }
 
+void Node::setSendFunc(void (*func)(Json::Value, int)) {
+    _send = func;
+}
+
+void Node::setExecFunc(void (*func)(std::string)) {
+    _exec = func;
+}
+
 void Node::tick() {
     now = clock();
 }
