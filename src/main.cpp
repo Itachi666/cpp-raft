@@ -15,6 +15,7 @@
 #include <json/json.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
+#include <memory>
 
 #include "node.h"
 
@@ -38,33 +39,41 @@ Address get_addr_by_str(char *s) {
 
 int udp_socket;
 
-void send_to(Json::Value msg, Address& addr) {
-    string buff = msg.toStyledString();
+void send_to(Json::Value msg, Address &addr) {
+    Json::StreamWriterBuilder writebuilder;
+    writebuilder.settings_["indentation"] = "";
+    string buff = Json::writeString(writebuilder, msg);
+    //string buff = msg.toStyledString();
+    //cout<<"Come from send_to and want to sent to "<<addr.toString()<<endl;
 
-    cout<<buff<<endl;
     struct sockaddr_in remoteAddr;
     remoteAddr.sin_family = AF_INET;
     remoteAddr.sin_addr.s_addr = inet_addr(addr.ip.c_str());
-    remoteAddr.sin_port=htons(addr.port);
+    remoteAddr.sin_port = htons(addr.port);
 
     sendto(udp_socket, buff.c_str(), buff.length(), 0, (sockaddr *) &remoteAddr, sizeof(remoteAddr));
 }
 
 map<string, string> kv;
 
-void command_exec(const string command) {
-    Json::Reader reader;
+void command_exec(const string &command) {
     Json::Value msg;
 
-    if (reader.parse(command, msg)) {
-        if (!msg["cmd"].isNull())
-            if (msg["cmd"].asString()=="set")
-                kv[msg["key"].asString()]=msg["val"].asString();
-            else if (msg["cmd"].asString()=="del" && kv.find(msg["key"].asString())!=kv.end())
-                kv.erase(msg["key"].asString());
-
+    Json::CharReaderBuilder readerBuilder;
+    readerBuilder["collectComments"] = false;
+    JSONCPP_STRING errs;
+    Json::CharReader *reader = readerBuilder.newCharReader();
+    if (!reader->parse(command.data(), command.data() + command.size(), &msg, &errs)) {
+        return;
     }
 
+    cout<<msg.toStyledString()<<endl;
+
+    if (!msg["cmd"].isNull())
+        if (msg["cmd"].asString() == "set")
+            kv[msg["key"].asString()] = msg["val"].asString();
+        else if (msg["cmd"].asString() == "del" && kv.find(msg["key"].asString()) != kv.end())
+            kv.erase(msg["key"].asString());
 
 
 }
@@ -133,22 +142,25 @@ int main(int argc, char **argv) {
                 } else if (recvd == -1 && errno == EAGAIN)
                     throw TimeoutExecption();
 
-                string t=R"({"ret": 888, "err": "One UDP package which come from server"})";
+
 
 
 
                 //sendto(udp_socket, sendData, strlen(sendData), 0, (sockaddr *) &remoteAddr, nAddrLen);
-                cout<<"Send success"<<endl;
+                cout << "Send success" << endl;
             }
             catch (TimeoutExecption &e) {
                 std::cout << e.what() << std::endl;
                 break;
             }
         }
+        string t = R"({"cmd": "set", "key": "yang", "val": "3jj", "seq": 2})";
+        command_exec(t);
+
         node.output();
     }
 
-    string test = R"({"id":1,"name":"kurama"})";
+    /*string test = R"({"id":1,"name":"kurama"})";
     Json::Reader reader;
     Json::Value value;
     if (reader.parse(test, value)) {
@@ -157,7 +169,7 @@ int main(int argc, char **argv) {
             cout << value["name"].asString() << endl;
 
         }
-    }
+    }*/
 
     return 0;
 }

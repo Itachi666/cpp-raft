@@ -37,7 +37,7 @@ public:
 
     void setSendFunc(void (*func)(Json::Value, Address &));
 
-    void setExecFunc(void (*func)(std::string));
+    void setExecFunc(void (*func)(const std::string&));
 
     bool isLeader() { return state == _STATE.LEADER; };
 
@@ -49,8 +49,6 @@ public:
 
     void messageRecv(Address addr, Json::Value msg);
 
-    void becomeLeader();
-
     void Debug(bool flag = true);
 
     void output();
@@ -61,7 +59,7 @@ private:
 
     void (*_send)(Json::Value, Address &) = nullptr;
 
-    void (*_exec)(std::string) = nullptr;
+    void (*_exec)(const std::string&) = nullptr;
 
     int state = _STATE.FOLLOWER;
     int votes_count = 0;
@@ -69,19 +67,21 @@ private:
     BaseLog log;
 
     int currentTerm = 0, votesCount = 0;
-
     int needLastApplied = 0;
-
     int commitIndex = 0, lastApplied = 0, leaderCommitIndex = 0;
+
 
     std::map<std::string, int> nextIndex, matchIndex;
 
+    std::string INIT_COMMAND="Init";
     bool debug = false;
 
     time_t now = clock(), newAppendEntriesTime=clock();
     time_t election_dl = now + genTimedl();
 
     time_t genTimedl();
+
+    void becomeLeader();
 
     void sendAppendEntriesReq();
 

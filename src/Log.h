@@ -12,7 +12,7 @@ struct StandardLog {
     int term;
     int index;
 
-    explicit StandardLog(std::string s = "NULL", int x=0,int y=0);
+    explicit StandardLog(std::string s = "NULL", int x = 0, int y = 0);
 };
 
 class Log {
@@ -21,14 +21,15 @@ public:
 
     ~Log() = default;
 
-    void add(std::string& command, int index, int term);
+    void add(std::string &command, int index, int term);
 
-    int getCurrIndex() {return logs.back().index;};
-    int getCurrTerm() {return logs.back().term;};
+    int getCurrIndex() { return logs.back().index; };
 
-    void getPrevIndex_Term(int next_index,int* prevIndex, int* prevTerm);
+    int getCurrTerm() { return logs.back().term; };
 
-    std::vector<StandardLog> getEntries(int start_index, int num=-1);
+    void getPrevIndex_Term(int next_index, int *prevIndex, int *prevTerm);
+
+    std::vector<StandardLog> getEntries(int start_index, int num = -1);
 
 protected:
     std::vector<StandardLog> logs;

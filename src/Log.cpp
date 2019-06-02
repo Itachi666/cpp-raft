@@ -7,7 +7,7 @@
 
 using namespace std;
 
-StandardLog::StandardLog(std::string s, int i, int t) : command{std::move(s)}, index{i}, term{t} {};
+StandardLog::StandardLog(std::string s, int i, int t) : command{std::move(s)}, index{i}, term{t} {}
 
 void Log::add(std::string &command, int index, int term) {
     StandardLog log(command, index, term);
@@ -37,7 +37,7 @@ std::vector<StandardLog> Log::getEntries(int start_index, int num) {
         for (int i = diff - 1; i < logs.size(); i++)
             entries.push_back(logs[i]);
     } else {
-        for (int i = diff - 1; i < min(diff+num, (int)logs.size()); i++)
+        for (int i = diff - 1; i < std::min(diff+num, (int)logs.size()); i++)
             entries.push_back(logs[i]);
     }
     return entries;
