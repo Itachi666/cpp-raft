@@ -4,7 +4,7 @@ This is a C++ implementation of the [RAFT](https://raft.github.io/) distributed 
 
 For more details on Raft, you can read [In Search of an Understandable Consensus Algorithm](https://raft.github.io/raft.pdf) by Diego Ongaro and John Ousterhout.  
 
-Also have some reference from [chishaxie/py-raft](chishaxie/py-raft).
+Also have some reference from [chishaxie/py-raft](https://github.com/chishaxie/py-raft).
 
 ### Dep
 
