@@ -86,9 +86,9 @@ private:
 
     void sendAppendEntriesRsp(Address &addr, int next_index = -1, bool reset = false, bool success = false);
 
-    std::vector<Entry> json2entries(Json::Value& json);
+    std::vector<Entry> json2entries(const Json::Value& json);
 
-    Json::Value entries2json(std::vector<Entry>& entries);
+    Json::Value entries2json(const std::vector<Entry>& entries);
 
     void debug_show(const std::string& s="NULL", int pIndex=0, int pTerm=0, const std::string& entries="NULL");
 

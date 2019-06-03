@@ -6,6 +6,7 @@
 
 #include <iostream>
 #include <cassert>
+#include <algorithm>
 
 #define HEARTBREAK 500
 
@@ -38,13 +39,22 @@ void Node::setExecFunc(void (*func)(const std::string &)) {
     _exec = func;
 }
 
-std::vector<Entry> Node::json2entries(Json::Value &json) {
+std::vector<Entry> Node::json2entries(const Json::Value &json) {
     std::vector<Entry> entries;
+    for (auto &i : json)
+        entries.emplace_back(i[0].asString(), i[1].asInt(), i[2].asInt());
     return entries;
 }
 
-Json::Value Node::entries2json(std::vector<Entry> &entries) {
+Json::Value Node::entries2json(const std::vector<Entry> &entries) {
     Json::Value json;
+    for (const auto &entry:entries) {
+        Json::Value msg;
+        msg.append(entry.command);
+        msg.append(entry.index);
+        msg.append(entry.term);
+        json.append(msg);
+    }
     return json;
 }
 
@@ -297,19 +307,36 @@ time_t Node::genTimedl() {
 }
 
 void Node::output() {
-    Json::Value msg;
-    std::string s=R"({"type": "RequestVoteReq", "term": 1, "last_log_index": 1, "last_log_term": 0, "_raft": 1})";
+    Json::Value msg, command;
+    std::string s = R"({'type': 'AppendEntriesReq', 'term': 1, 'commit_index': 2, 'entries': [], 'prev_log_index': 2, 'prev_log_term': 1, '_raft': 1})";
+    std::replace(s.begin(), s.end(), '\'', '\"');
 
-    _exec(s);
+    std::string t = (R"({"cmd": "set", "key": "niu", "val": "123", "seq": 1})");
+    for (int i = 0; i < 5; i++) {
+        command[i].append(t);
+        command[i].append(i + 1);
+        command[i].append(i + 3);
+    }
+
 
     Json::CharReaderBuilder readerBuilder;
     readerBuilder["collectComments"] = false;
     JSONCPP_STRING errs;
     Json::CharReader *reader = readerBuilder.newCharReader();
     if (!reader->parse(s.data(), s.data() + s.size(), &msg, &errs)) {
-        printf("error");
+        std::cout << s << std::endl;
         return;
     }
+    msg["entries"] = (command);
 
-    messageRecv(part_addrs[0], msg);
+
+    std::cout << command.toStyledString() << std::endl;
+    std::vector<Entry> tmp = json2entries(command);
+    for (auto t:tmp) {
+        std::cout << t.command << ' ' << t.index << ' ' << t.term << std::endl;
+    }
+
+    std::cout << entries2json(tmp).toStyledString() << std::endl;
+
+    //messageRecv(part_addrs[0], msg);
 }

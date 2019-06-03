@@ -10,6 +10,7 @@
 #include <cstdio>
 #include <string>
 #include <cstring>
+#include <algorithm>
 #include <cerrno>
 #include <sys/socket.h>
 #include <json/json.h>
@@ -39,7 +40,7 @@ Address get_addr_by_str(char *s) {
 
 int udp_socket;
 
-void send_to(Json::Value& msg, Address &addr) {
+void send_to(Json::Value &msg, Address &addr) {
     Json::StreamWriterBuilder writebuilder;
     writebuilder.settings_["indentation"] = "";
     string buff = Json::writeString(writebuilder, msg);
@@ -67,7 +68,7 @@ void command_exec(const string &command) {
         return;
     }
 
-    cout<<msg.toStyledString()<<endl;
+    cout << msg.toStyledString() << endl;
 
     if (!msg["cmd"].isNull())
         if (msg["cmd"].asString() == "set")
@@ -142,17 +143,14 @@ int main(int argc, char **argv) {
                 } else if (rec == -1 && errno == EAGAIN)
                     throw TimeoutExecption();
 
-                //sendto(udp_socket, sendData, strlen(sendData), 0, (sockaddr *) &remoteAddr, nAddrLen);
                 cout << "Send success" << endl;
             }
             catch (TimeoutExecption &e) {
                 std::cout << e.what() << std::endl;
                 break;
             }
+            node.tick();
         }
-//        string t = R"({"cmd": "set", "key": "yang", "val": "3jj", "seq": 2})";
-//        command_exec(t);
-
         node.output();
     }
 
