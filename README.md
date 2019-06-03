@@ -6,7 +6,7 @@ For more details on Raft, you can read [In Search of an Understandable Consensus
 
 Also have some reference from [chishaxie/py-raft](chishaxie/py-raft).
 
-### Prerequisites
+### Dep
 
 - CMake 3.14.4
 - python 3.7.3
