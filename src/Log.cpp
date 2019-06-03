@@ -7,16 +7,15 @@
 
 using namespace std;
 
-StandardLog::StandardLog(std::string s, int i, int t) : command{std::move(s)}, index{i}, term{t} {}
+Entry::Entry(std::string s, int i, int t) : command{std::move(s)}, index{i}, term{t} {}
 
-void Log::add(std::string &command, int index, int term) {
-    StandardLog log(command, index, term);
-    logs.push_back(log);
+void Log::add(const Entry& entry) {
+    logs.push_back(entry);
 }
 
 void Log::getPrevIndex_Term(int next_index, int *prevIndex, int *prevTerm) {
     int pIndex = next_index - 1;
-    std::vector<StandardLog> entries = getEntries(pIndex, 1);
+    std::vector<Entry> entries = getEntries(pIndex, 1);
     if (!entries.empty()) {
         *prevIndex = pIndex;
         *prevTerm = entries[0].term;
@@ -26,9 +25,9 @@ void Log::getPrevIndex_Term(int next_index, int *prevIndex, int *prevTerm) {
     }
 }
 
-std::vector<StandardLog> Log::getEntries(int start_index, int num) {
+std::vector<Entry> Log::getEntries(int start_index, int num) {
     int first_index = logs[0].index;
-    std::vector<StandardLog> entries;
+    std::vector<Entry> entries;
     if (start_index < first_index)
         return entries;
 

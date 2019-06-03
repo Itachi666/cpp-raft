@@ -39,7 +39,7 @@ Address get_addr_by_str(char *s) {
 
 int udp_socket;
 
-void send_to(Json::Value msg, Address &addr) {
+void send_to(Json::Value& msg, Address &addr) {
     Json::StreamWriterBuilder writebuilder;
     writebuilder.settings_["indentation"] = "";
     string buff = Json::writeString(writebuilder, msg);
@@ -134,12 +134,12 @@ int main(int argc, char **argv) {
             try {
                 char recvData[4096];
                 socklen_t nAddrLen = sizeof(remoteAddr);
-                int recvd = recvfrom(udp_socket, recvData, MAXLINE, 0, (struct sockaddr *) &remoteAddr, &nAddrLen);
-                if (recvd > 0) {
-                    recvData[recvd] = 0x00;
+                int rec = recvfrom(udp_socket, recvData, MAXLINE, 0, (struct sockaddr *) &remoteAddr, &nAddrLen);
+                if (rec > 0) {
+                    recvData[rec] = 0x00;
                     printf("Get a connect: %s:%d \r\n", inet_ntoa(remoteAddr.sin_addr), htons(remoteAddr.sin_port));
                     std::cout << recvData << std::endl;
-                } else if (recvd == -1 && errno == EAGAIN)
+                } else if (rec == -1 && errno == EAGAIN)
                     throw TimeoutExecption();
 
                 //sendto(udp_socket, sendData, strlen(sendData), 0, (sockaddr *) &remoteAddr, nAddrLen);
@@ -150,8 +150,8 @@ int main(int argc, char **argv) {
                 break;
             }
         }
-        string t = R"({"cmd": "set", "key": "yang", "val": "3jj", "seq": 2})";
-        command_exec(t);
+//        string t = R"({"cmd": "set", "key": "yang", "val": "3jj", "seq": 2})";
+//        command_exec(t);
 
         node.output();
     }

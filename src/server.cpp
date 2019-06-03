@@ -16,10 +16,8 @@
 #define MAXLINE 4096
 
 
-struct MyException : public std::exception
-{
-    const char* what () const noexcept
-    {
+struct MyException : public std::exception {
+    const char *what() const noexcept {
         return "C++ Exception";
     }
 };
@@ -45,26 +43,24 @@ int main(int argc, char **argv) {
     }
 
     struct sockaddr_in remoteAddr;
-    socklen_t nAddrLen=sizeof(remoteAddr);
+    socklen_t nAddrLen = sizeof(remoteAddr);
 
     printf("======waiting for client's request======\n");
     while (true) {
         try {
             char recvData[255];
-            int ret = recvfrom(listenfd, recvData, MAXLINE, 0, (struct sockaddr*) &remoteAddr, &nAddrLen);
-            if (ret > 0)
-            {
+            int ret = recvfrom(listenfd, recvData, MAXLINE, 0, (struct sockaddr *) &remoteAddr, &nAddrLen);
+            if (ret > 0) {
                 recvData[ret] = 0x00;
-                printf("Get a connect: %s \r\n",inet_ntoa(remoteAddr.sin_addr));
-                std::cout<<recvData<<std::endl;
-            }
-            else
+                printf("Get a connect: %s \r\n", inet_ntoa(remoteAddr.sin_addr));
+                std::cout << recvData << std::endl;
+            } else
                 throw MyException();
 
-            const char * sendData = "One UDP package which come from server\n";
-            sendto(listenfd, sendData,strlen(sendData), 0, (sockaddr *)&remoteAddr, nAddrLen);
+            const char *sendData = "One UDP package which come from server\n";
+            sendto(listenfd, sendData, strlen(sendData), 0, (sockaddr *) &remoteAddr, nAddrLen);
         }
-        catch (MyException& e) {
+        catch (MyException &e) {
             std::cout << e.what() << std::endl;
             break;
         }

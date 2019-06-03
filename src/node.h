@@ -35,7 +35,7 @@ public:
 
     ~Node() = default;
 
-    void setSendFunc(void (*func)(Json::Value, Address &));
+    void setSendFunc(void (*func)(Json::Value&, Address &));
 
     void setExecFunc(void (*func)(const std::string&));
 
@@ -47,7 +47,7 @@ public:
 
     void tick();
 
-    void messageRecv(Address addr, Json::Value msg);
+    void messageRecv(Address& addr, Json::Value& msg);
 
     void Debug(bool flag = true);
 
@@ -57,12 +57,11 @@ private:
     Address self_addr, leader, votedFor;
     std::vector<Address> part_addrs;
 
-    void (*_send)(Json::Value, Address &) = nullptr;
+    void (*_send)(Json::Value&, Address &) = nullptr;
 
     void (*_exec)(const std::string&) = nullptr;
 
     int state = _STATE.FOLLOWER;
-    int votes_count = 0;
 
     BaseLog log;
 
@@ -86,6 +85,13 @@ private:
     void sendAppendEntriesReq();
 
     void sendAppendEntriesRsp(Address &addr, int next_index = -1, bool reset = false, bool success = false);
+
+    std::vector<Entry> json2entries(Json::Value& json);
+
+    Json::Value entries2json(std::vector<Entry>& entries);
+
+    void debug_show(const std::string& s="NULL", int pIndex=0, int pTerm=0, const std::string& entries="NULL");
+
 };
 
 

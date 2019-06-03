@@ -5,6 +5,7 @@
 #include "node.h"
 
 #include <iostream>
+#include <cassert>
 
 #define HEARTBREAK 500
 
@@ -17,9 +18,10 @@ std::string Address::toString() {
 
 Node::Node(Address &saddr, std::vector<Address> &paddr) : self_addr(saddr), part_addrs(paddr) {
 
-    if (this->log.length() == 0)
-        this->log.add(INIT_COMMAND, 1, 0);
-
+    if (this->log.length() == 0) {
+        Entry tmp_entry(INIT_COMMAND, 1, 0);
+        this->log.add(tmp_entry);
+    }
     for (auto &part_addr : part_addrs)
         nextIndex[part_addr.toString()] = 3;
 }
@@ -28,12 +30,22 @@ void Node::Debug(const bool flag) {
     debug = flag;
 }
 
-void Node::setSendFunc(void (*func)(Json::Value, Address &)) {
+void Node::setSendFunc(void (*func)(Json::Value &, Address &)) {
     _send = func;
 }
 
-void Node::setExecFunc(void (*func)(const std::string&)) {
+void Node::setExecFunc(void (*func)(const std::string &)) {
     _exec = func;
+}
+
+std::vector<Entry> Node::json2entries(Json::Value &json) {
+    std::vector<Entry> entries;
+    return entries;
+}
+
+Json::Value Node::entries2json(std::vector<Entry> &entries) {
+    Json::Value json;
+    return json;
 }
 
 void Node::tick() {
@@ -45,7 +57,7 @@ void Node::tick() {
             leader = Address();
             currentTerm++;
             votedFor = self_addr;
-            votes_count = 1;
+            votesCount = 1;
             for (auto addr:part_addrs) {
                 Json::Value msg;
                 msg["type"] = "RequestVoteReq";
@@ -78,8 +90,8 @@ void Node::tick() {
 
     if (commitIndex > lastApplied) {
         int count = commitIndex - lastApplied;
-        std::vector<StandardLog> entries = log.getEntries(lastApplied + 1, count);
-        for (auto& entry:entries) {
+        std::vector<Entry> entries = log.getEntries(lastApplied + 1, count);
+        for (auto &entry:entries) {
             if (entry.command != INIT_COMMAND) {
                 if (debug)
                     std::cout << "Exec command= " << entry.command << " ..." << std::endl;
@@ -90,8 +102,120 @@ void Node::tick() {
     }
 }
 
-void Node::messageRecv(Address addr, Json::Value msg) {
+void Node::messageRecv(Address &addr, Json::Value &msg) {
     now = clock();
+
+    if (msg["type"] == "RequestVoteReq") {
+        //{'type': 'RequestVoteReq', 'term': 1, 'last_log_index': 1, 'last_log_term': 0, '_raft': 1}
+        if (debug)
+            printf("[%d] RequestVoteReq from %s, log(%d, %d)\n", msg["term"].asInt(),
+                   addr.toString().c_str(), msg["last_log_index"].asInt(), msg["last_log_term"].asInt());
+
+        if (msg["term"].asInt() > currentTerm) {
+            currentTerm = msg["term"].asInt();
+            votedFor = Address();
+            state = _STATE.FOLLOWER;
+            leader = Address();
+        }
+        if (state == _STATE.FOLLOWER || state == _STATE.CANDIDATE)
+            if (msg["term"].asInt() >= currentTerm) {
+                int lastIndex = msg["last_log_index"].asInt();
+                int lastTerm = msg["last_log_index"].asInt();
+                if (lastTerm < log.getCurrIndex() || (lastTerm == log.getCurrIndex() && lastIndex < log.getCurrIndex()))
+                    return;
+                if (votedFor.ip != "NULL")
+                    return;
+
+                votedFor = addr;
+                election_dl = now + genTimedl();
+                Json::Value msg_send;
+                msg_send["type"] = "RequestVoteRep";
+                msg_send["term"] = msg["term"].asInt();
+                _send(msg_send, addr);
+                if (debug)
+                    printf("[%d] RequestVoteRsp to %s\n", msg["term"].asInt(), addr.toString().c_str());
+            }
+
+    } else if (msg["type"] == "RequestVoteRsp") {
+        if (debug)
+            printf("[%d] RequestVoteRsp from %s\n", msg["term"].asInt(), addr.toString().c_str());
+        if (state == _STATE.CANDIDATE && msg["term"].asInt() == currentTerm) {
+            votesCount++;
+            if (votesCount > (part_addrs.size() + 1) / 2)
+                becomeLeader();
+        }
+
+    } else if (msg["type"] == "AppendEntriesReq") {
+        Json::StreamWriterBuilder writebuilder;
+        writebuilder.settings_["indentation"] = "";
+
+        //{'type': 'AppendEntriesReq', 'term': 1, 'commit_index': 3, 'entries': [], 'prev_log_index': 3, 'prev_log_term': 1, '_raft': 1}
+        if (msg["term"].asInt() >= currentTerm)
+            election_dl = now + genTimedl();
+        if (leader.toString() != addr.toString()) {
+            leader = addr;
+            if (debug)
+                std::cout << "Follow New Leader " << leader.toString() << std::endl;
+        }
+        if (msg["term"].asInt() > currentTerm) {
+            currentTerm = msg["term"].asInt();
+            votedFor = Address();
+        }
+        state = _STATE.FOLLOWER;
+        std::vector<Entry> newEntries = json2entries(msg["entries"]);
+        leaderCommitIndex = msg["commit_index"].asInt();
+
+        int prevIndex = msg["prev_log_index"].asInt();
+        int prevTerm = msg["prev_log_term"].asInt();
+        std::vector<Entry> prevEntries = log.getEntries(prevIndex);
+
+        if (prevEntries.empty()) {
+            debug_show("[Missing more]", prevIndex, prevTerm, Json::writeString(writebuilder, msg["entries"]));
+
+            sendAppendEntriesRsp(addr, true, false);
+            return;
+        }
+
+        if (prevEntries[0].term != prevTerm) {
+            debug_show("[Last conflict]", prevIndex, prevTerm, Json::writeString(writebuilder, msg["entries"]));
+            sendAppendEntriesRsp(addr, prevIndex, true, false);
+            return;
+        }
+
+        if (prevEntries.size() > 1) {
+            debug_show("[Redundant]", prevIndex, prevTerm, Json::writeString(writebuilder, msg["entries"]));
+
+            //TODO: deleteEntries
+        }
+
+        int next_index = prevIndex + 1;
+        if (!newEntries.empty()) {
+            debug_show("[Append]", prevIndex, prevTerm, Json::writeString(writebuilder, msg["entries"]));
+            for (const auto &entry:newEntries) {
+                assert(log.length() + 1 == entry.index);
+                log.add(entry);
+            }
+            next_index = newEntries.back().index;
+            if (debug)
+                printf("Local Logs[%d] (New)\n", log.length());
+
+            sendAppendEntriesRsp(addr, next_index, true);
+            commitIndex = std::min(leaderCommitIndex, log.length());
+        }
+
+    } else if (msg["type"] == "AppendEntriesRsp") {
+        //{'type': 'AppendEntriesRsp', 'next_index': 3, 'reset': False, 'success': True, '_raft': 1}
+        if (state == _STATE.LEADER) {
+            int next_index = msg["next_index"].asInt(), curr_index = next_index - 1;
+            bool reset = msg["reset"].asBool();
+            bool success = msg["success"].asBool();
+
+            if (reset)
+                nextIndex[addr.toString()] = next_index;
+            if (success)
+                matchIndex[addr.toString()] = curr_index;
+        }
+    }
 }
 
 void Node::becomeLeader() {
@@ -107,7 +231,8 @@ void Node::becomeLeader() {
     }
 
     needLastApplied = log.getCurrIndex();
-    log.add(INIT_COMMAND, log.getCurrIndex() + 1, currentTerm);
+
+    log.add(Entry{INIT_COMMAND, log.getCurrIndex() + 1, currentTerm});
     sendAppendEntriesReq();
 }
 
@@ -122,14 +247,14 @@ void Node::sendAppendEntriesReq() {
         while (next_index <= log.getCurrIndex() && sendLeastOne) {
             int prev_index = 0, prev_term = 0;
             log.getPrevIndex_Term(next_index, &prev_index, &prev_term);
-            std::vector<StandardLog> entries = log.getEntries(next_index);
+            std::vector<Entry> entries = log.getEntries(next_index);
 
-            Json::Value entry;
+            Json::Value entry = entries2json(entries);
             Json::Value msg;
             msg["type"] = "AppendEntriesReq";
             msg["term"] = currentTerm;
             msg["commit_index"] = commitIndex;
-            msg["entries"].append(entry); //TODO:entries
+            msg["entries"].append(entry);
             msg["prev_log_index"] = prev_index;
             msg["prev_log_term"] = prev_term;
 
@@ -154,12 +279,37 @@ void Node::sendAppendEntriesRsp(Address &addr, int next_index, bool reset, bool 
     _send(msg, addr);
 }
 
+void Node::debug_show(const std::string &s, int pIndex, int pTerm, const std::string &entries) {
+    if (!debug)
+        return;
+    if (s != "NULL")
+        std::cout << s << std::endl;
+    printf("Leader:\n"
+           "    prevIndex: %d\n"
+           "    prevTerm:  %d\n"
+           "    entries: %s\n"
+           "Local Logs[%d]\n", pIndex, pTerm, entries.c_str(), log.length());
+}
+
 time_t Node::genTimedl() {
     int tmin = 500, tmax = 1500;
     return tmin + (random() % (tmax - tmin));
 }
 
 void Node::output() {
-    tick();
-    std::cout << leader.toString() << std::endl;
+    Json::Value msg;
+    std::string s=R"({"type": "RequestVoteReq", "term": 1, "last_log_index": 1, "last_log_term": 0, "_raft": 1})";
+
+    _exec(s);
+
+    Json::CharReaderBuilder readerBuilder;
+    readerBuilder["collectComments"] = false;
+    JSONCPP_STRING errs;
+    Json::CharReader *reader = readerBuilder.newCharReader();
+    if (!reader->parse(s.data(), s.data() + s.size(), &msg, &errs)) {
+        printf("error");
+        return;
+    }
+
+    messageRecv(part_addrs[0], msg);
 }
