@@ -53,7 +53,7 @@ public:
 
     void Debug(bool flag = true);
 
-    void output();
+    void testplase();
 
 private:
     Address self_addr, leader, votedFor;

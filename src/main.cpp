@@ -219,7 +219,6 @@ int main(int argc, char **argv) {
                 }
             }
             catch (TimeoutExecption &e) {
-                //cout << e.what() << endl;
             }
             catch (JSONCPP_STRING &e) {
                 cout << "Wrong json command: " << endl << e << endl;
@@ -227,7 +226,6 @@ int main(int argc, char **argv) {
             }
             node.tick();
         }
-        node.output();
     }
 
     return 0;

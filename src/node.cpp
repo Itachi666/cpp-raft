@@ -264,8 +264,6 @@ void Node::sendAppendEntriesReq() {
             log.getPrevIndex_Term(next_index, &prev_index, &prev_term);
             std::vector<Entry> entries;
 
-            //std::cout<<part_addr.toString()<<": "<<next_index<<"  "<<nextIndex[part_addr.toString()]<<std::endl;
-
             if (next_index <= log.getCurrIndex()) {
                 entries = log.getEntries(next_index);
                 nextIndex[part_addr.toString()] = entries.back().index + 1;
@@ -318,7 +316,7 @@ time_t Node::genTimedl() {
     return tmin + (random() % (tmax - tmin));
 }
 
-void Node::output() {
+void Node::testplase() {
 
     printf("%d %d\n", log.getCurrTerm(), currentTerm);
 
