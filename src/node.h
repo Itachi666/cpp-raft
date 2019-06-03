@@ -35,21 +35,21 @@ public:
 
     ~Node() = default;
 
-    void setSendFunc(void (*func)(Json::Value&, Address &));
+    void setSendFunc(void (*func)(Json::Value &, Address &));
 
-    void setExecFunc(void (*func)(const std::string&));
+    void setExecFunc(void (*func)(const std::string &));
 
     bool isLeader() { return state == _STATE.LEADER; };
 
-    int getLeader() { return state; };
+    std::string getLeader() { return leader.toString(); };
 
     bool isReadOnlyNeedAppendCommend() { return needLastApplied > lastApplied; };
 
-    void appendCommand(const std::string& command);
+    void appendCommand(const std::string &command);
 
     void tick();
 
-    void messageRecv(Address& addr, Json::Value& msg);
+    void messageRecv(Address &addr, Json::Value &msg);
 
     void Debug(bool flag = true);
 
@@ -59,9 +59,9 @@ private:
     Address self_addr, leader, votedFor;
     std::vector<Address> part_addrs;
 
-    void (*_send)(Json::Value&, Address &) = nullptr;
+    void (*_send)(Json::Value &, Address &) = nullptr;
 
-    void (*_exec)(const std::string&) = nullptr;
+    void (*_exec)(const std::string &) = nullptr;
 
     int state = _STATE.FOLLOWER;
 
@@ -74,10 +74,10 @@ private:
 
     std::map<std::string, int> nextIndex, matchIndex;
 
-    std::string INIT_COMMAND="Init";
+    std::string INIT_COMMAND = "Init";
     bool debug = false;
 
-    time_t now = clock(), newAppendEntriesTime=clock();
+    time_t now = clock(), newAppendEntriesTime = clock();
     time_t election_dl = now + genTimedl();
 
     time_t genTimedl();
@@ -88,11 +88,11 @@ private:
 
     void sendAppendEntriesRsp(Address &addr, int next_index = -1, bool reset = false, bool success = false);
 
-    std::vector<Entry> json2entries(const Json::Value& json);
+    std::vector<Entry> json2entries(const Json::Value &json);
 
-    Json::Value entries2json(const std::vector<Entry>& entries);
+    Json::Value entries2json(const std::vector<Entry> &entries);
 
-    void debug_show(const std::string& s="NULL", int pIndex=0, int pTerm=0, const std::string& entries="NULL");
+    void debug_show(const std::string &s = "NULL", int pIndex = 0, int pTerm = 0, const std::string &entries = "NULL");
 
 };
 

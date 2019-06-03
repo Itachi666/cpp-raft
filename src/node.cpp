@@ -8,7 +8,7 @@
 #include <cassert>
 #include <algorithm>
 
-#define HEARTBREAK 100
+#define HEARTBREAK 150
 #define WAITINTTIME 500
 
 
@@ -110,8 +110,8 @@ void Node::tick() {
         for (auto &entry:entries) {
             if (entry.command != INIT_COMMAND) {
                 if (debug)
-                    std::cout << "Exec command= " << entry.command << " ..." << std::endl;
-                //TODO: exec command
+                    std::cout << "Exec command = " << entry.command << " ..." << std::endl;
+                _exec(entry.command);
             }
             lastApplied++;
         }
@@ -200,8 +200,7 @@ void Node::messageRecv(Address &addr, Json::Value &msg) {
 
         if (prevEntries.size() > 1) {
             debug_show("[Redundant]", prevIndex, prevTerm, Json::writeString(writebuilder, msg["entries"]));
-
-            //TODO: deleteEntries
+            log.deleteEntriesFrom(prevIndex + 1);
         }
 
         int next_index = prevIndex + 1;
@@ -271,8 +270,6 @@ void Node::sendAppendEntriesReq() {
                 entries = log.getEntries(next_index);
                 nextIndex[part_addr.toString()] = entries.back().index + 1;
             }
-
-
 
             Json::Value entry = entries2json(entries);
             Json::Value msg;

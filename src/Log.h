@@ -45,6 +45,8 @@ public:
 
     void clear();
 
+    void deleteEntriesFrom(int entryFrom);
+
 private:
 
 };

@@ -41,7 +41,8 @@ Address get_addr_by_str(char *s) {
 int udp_socket;
 
 void send_to(Json::Value &msg, Address &addr) {
-    msg["_raft"] = 1;
+    if (msg["ret"].isNull())
+        msg["_raft"] = 1;
 
     Json::StreamWriterBuilder writebuilder;
     writebuilder.settings_["indentation"] = "";
@@ -56,6 +57,8 @@ void send_to(Json::Value &msg, Address &addr) {
 }
 
 map<string, string> kv;
+int seq = 0;
+map<int, Address> session;
 
 void command_exec(const string &command) {
     Json::Value msg;
@@ -67,9 +70,6 @@ void command_exec(const string &command) {
     if (!reader->parse(command.data(), command.data() + command.size(), &msg, &errs))
         return;
 
-
-    cout << msg.toStyledString() << endl;
-
     if (!msg["cmd"].isNull())
         if (msg["cmd"].asString() == "set")
             kv[msg["key"].asString()] = msg["val"].asString();
@@ -77,6 +77,28 @@ void command_exec(const string &command) {
             kv.erase(msg["key"].asString());
 
 
+    if (!msg["seq"].isNull() && session.find(msg["seq"].asInt()) != session.end()) {
+        Address addr = session[msg["seq"].asInt()];
+        session.erase(msg["seq"].asInt());
+        Json::Value tmp;
+
+        if (msg["cmd"].asString() == "get") {
+            if (_DEBUG)
+                cout << "Special strong consistency read" << endl;
+            if (kv.find(msg["key"].asString()) != kv.end()) {
+                tmp["ret"] = 0;
+                tmp["val"] = kv[msg["key"].asString()];
+                send_to(tmp, addr);
+            } else {
+                tmp["ret"] = -1;
+                tmp["err"] = "Not Found";
+                send_to(tmp, addr);
+            }
+        } else {
+            tmp["ret"] = 0;
+            send_to(tmp, addr);
+        }
+    }
 }
 
 
@@ -151,12 +173,53 @@ int main(int argc, char **argv) {
                     msg.removeMember("_raft");
                     node.messageRecv(addr, msg);
                 } else {
+                    while (true) {
+                        if (msg["cmd"].isNull() || (msg["cmd"].asString() != "get" && msg["cmd"].asString() != "set" &&
+                                                    msg["cmd"].asString() != "del"))
+                            break;
+                        if (msg["key"].isNull())
+                            break;
+                        if (msg["cmd"].asString() == "set" && msg["val"].isNull())
+                            break;
 
+                        if (_DEBUG)
+                            if (msg["cmd"].asString() != "get")
+                                cout << "New Request: " << command << endl;
+
+                        if (!node.isLeader()) {
+                            Json::Value tmp;
+                            tmp["ret"] = -999;
+                            tmp["err"] = "Not Leader";
+                            tmp["redirect"] = node.getLeader();
+                            send_to(tmp, addr);
+                            break;
+                        }
+
+                        if (msg["cmd"].asString() == "get" && !node.isReadOnlyNeedAppendCommend()) {
+                            Json::Value tmp;
+                            if (kv.find(msg["key"].asString()) != kv.end()) {
+                                tmp["ret"] = 0;
+                                tmp["val"] = kv[msg["key"].asString()];
+                            } else {
+                                tmp["ret"] = -1;
+                                tmp["err"] = "Not Found";
+                            }
+                            send_to(tmp, addr);
+                        } else {
+                            seq++;
+                            session[seq] = addr;
+                            msg["seq"] = seq;
+
+                            Json::StreamWriterBuilder writebuilder;
+                            writebuilder.settings_["indentation"] = "";
+                            node.appendCommand(Json::writeString(writebuilder, msg));
+                        }
+                        break;
+                    }
                 }
             }
             catch (TimeoutExecption &e) {
                 //cout << e.what() << endl;
-                //break;
             }
             catch (JSONCPP_STRING &e) {
                 cout << "Wrong json command: " << endl << e << endl;

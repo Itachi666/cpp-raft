@@ -9,7 +9,7 @@ using namespace std;
 
 Entry::Entry(std::string s, int i, int t) : command{std::move(s)}, index{i}, term{t} {}
 
-void Log::add(const Entry& entry) {
+void Log::add(const Entry &entry) {
     logs.push_back(entry);
 }
 
@@ -33,10 +33,10 @@ std::vector<Entry> Log::getEntries(int start_index, int num) {
 
     int diff = start_index - first_index;
     if (num == -1) {
-        for (int i = diff ; i < logs.size(); i++)
+        for (int i = diff; i < logs.size(); i++)
             entries.push_back(logs[i]);
     } else {
-        for (int i = diff ; i < std::min(diff+num, (int)logs.size()); i++)
+        for (int i = diff; i < std::min(diff + num, (int) logs.size()); i++)
             entries.push_back(logs[i]);
     }
     return entries;
@@ -48,4 +48,13 @@ void BaseLog::clear() {
 
 int BaseLog::length() {
     return this->logs.size();
+}
+
+void BaseLog::deleteEntriesFrom(int entryFrom) {
+    int firstIndex = logs[0].index;
+    int diff = entryFrom - firstIndex;
+    if (diff < 0)
+        return;
+    for (int i = diff; i < logs.size(); i++)
+        logs.pop_back();
 }
