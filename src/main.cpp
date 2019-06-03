@@ -1,7 +1,7 @@
 /**********************************************************************
  * Copyright (C) 2019 Niujx Ltd. All rights reserved.
  *
- * @Author: Niujx
+ * @Author: Niujx, YangRuijie
  * @Email: niujx666@foxmail.com
  *
  * Description: A C++ implementation(Demo) of RAFT consensus algorithm.
