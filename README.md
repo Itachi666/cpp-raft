@@ -12,21 +12,21 @@ For more details on Raft, you can read [In Search of an Understandable Consensus
 
 ### Build
 ```shell
-$cmake CmakeLists.txt && make
+$ cmake CmakeLists.txt && make
 ```
 
 ### Run
 
 ```shell
-$./raft node 127.0.0.1:9901 127.0.0.1:9902 127.0.0.1:9903
-$./raft node 127.0.0.1:9902 127.0.0.1:9901 127.0.0.1:9903
-$./raft node 127.0.0.1:9903 127.0.0.1:9901 127.0.0.1:9902
-$python raft_http.py 9909 127.0.0.1:9901 127.0.0.1:9902 127.0.0.1:9903
+$ ./raft node 127.0.0.1:9901 127.0.0.1:9902 127.0.0.1:9903
+$ ./raft node 127.0.0.1:9902 127.0.0.1:9901 127.0.0.1:9903
+$ ./raft node 127.0.0.1:9903 127.0.0.1:9901 127.0.0.1:9902
+$ python raft_http.py 9909 127.0.0.1:9901 127.0.0.1:9902 127.0.0.1:9903
 ```
 
 ### Test
 
 ```shell
-$python raft_http_test.py 127.0.0.1:9909 10 100
+$ python raft_http_test.py 127.0.0.1:9909 10 100
 ```
 
