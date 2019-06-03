@@ -33,10 +33,10 @@ std::vector<Entry> Log::getEntries(int start_index, int num) {
 
     int diff = start_index - first_index;
     if (num == -1) {
-        for (int i = diff - 1; i < logs.size(); i++)
+        for (int i = diff ; i < logs.size(); i++)
             entries.push_back(logs[i]);
     } else {
-        for (int i = diff - 1; i < std::min(diff+num, (int)logs.size()); i++)
+        for (int i = diff ; i < std::min(diff+num, (int)logs.size()); i++)
             entries.push_back(logs[i]);
     }
     return entries;

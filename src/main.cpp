@@ -21,7 +21,7 @@
 #include "node.h"
 
 #define _DEBUG true
-#define MAXLINE 4096
+#define MAXLINE 65536
 
 using namespace std;
 
@@ -41,11 +41,11 @@ Address get_addr_by_str(char *s) {
 int udp_socket;
 
 void send_to(Json::Value &msg, Address &addr) {
+    msg["_raft"] = 1;
+
     Json::StreamWriterBuilder writebuilder;
     writebuilder.settings_["indentation"] = "";
     string buff = Json::writeString(writebuilder, msg);
-    //string buff = msg.toStyledString();
-    //cout<<"Come from send_to and want to sent to "<<addr.toString()<<endl;
 
     struct sockaddr_in remoteAddr;
     remoteAddr.sin_family = AF_INET;
@@ -64,9 +64,9 @@ void command_exec(const string &command) {
     readerBuilder["collectComments"] = false;
     JSONCPP_STRING errs;
     Json::CharReader *reader = readerBuilder.newCharReader();
-    if (!reader->parse(command.data(), command.data() + command.size(), &msg, &errs)) {
+    if (!reader->parse(command.data(), command.data() + command.size(), &msg, &errs))
         return;
-    }
+
 
     cout << msg.toStyledString() << endl;
 
@@ -112,16 +112,9 @@ int main(int argc, char **argv) {
             return 0;
         }
 
-        struct timeval timeout = {0, 500};//0.5s
+        struct timeval timeout = {0, 100};//0.1s
         setsockopt(udp_socket, SOL_SOCKET, SO_SNDTIMEO, (const char *) &timeout, sizeof(timeout));
         setsockopt(udp_socket, SOL_SOCKET, SO_RCVTIMEO, (const char *) &timeout, sizeof(timeout));
-
-        //如果ret==0 则为成功,-1为失败,这时可以查看errno来判断失败原因
-//        int recvd = recv(sock_fd, buf, 1024, 0);
-//        if (recvd == -1 && errno == EAGAIN)
-//        {
-//            printf("timeout\n");//这里可以直接关闭socket连接
-//        }
 
         Node node(self, partner);
         node.setSendFunc(&send_to);
@@ -133,20 +126,40 @@ int main(int argc, char **argv) {
         printf("======waiting for client's request======\n");
         while (true) {
             try {
-                char recvData[4096];
+                char recvData[65536];
                 socklen_t nAddrLen = sizeof(remoteAddr);
                 int rec = recvfrom(udp_socket, recvData, MAXLINE, 0, (struct sockaddr *) &remoteAddr, &nAddrLen);
                 if (rec > 0) {
                     recvData[rec] = 0x00;
-                    printf("Get a connect: %s:%d \r\n", inet_ntoa(remoteAddr.sin_addr), htons(remoteAddr.sin_port));
-                    std::cout << recvData << std::endl;
+                    //printf("Get a connect: %s:%d \r\n", inet_ntoa(remoteAddr.sin_addr), htons(remoteAddr.sin_port));
+                    //std::cout << recvData << std::endl;
                 } else if (rec == -1 && errno == EAGAIN)
                     throw TimeoutExecption();
 
-                cout << "Send success" << endl;
+                Address addr(inet_ntoa(remoteAddr.sin_addr), htons(remoteAddr.sin_port));
+
+                Json::Value msg;
+                string command = recvData;
+                Json::CharReaderBuilder readerBuilder;
+                readerBuilder["collectComments"] = false;
+                JSONCPP_STRING errs;
+                Json::CharReader *reader = readerBuilder.newCharReader();
+                if (!reader->parse(command.data(), command.data() + command.size(), &msg, &errs))
+                    throw errs;
+
+                if (!msg["_raft"].isNull()) {
+                    msg.removeMember("_raft");
+                    node.messageRecv(addr, msg);
+                } else {
+
+                }
             }
             catch (TimeoutExecption &e) {
-                std::cout << e.what() << std::endl;
+                //cout << e.what() << endl;
+                //break;
+            }
+            catch (JSONCPP_STRING &e) {
+                cout << "Wrong json command: " << endl << e << endl;
                 break;
             }
             node.tick();

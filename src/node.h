@@ -45,6 +45,8 @@ public:
 
     bool isReadOnlyNeedAppendCommend() { return needLastApplied > lastApplied; };
 
+    void appendCommand(const std::string& command);
+
     void tick();
 
     void messageRecv(Address& addr, Json::Value& msg);
@@ -67,7 +69,7 @@ private:
 
     int currentTerm = 0, votesCount = 0;
     int needLastApplied = 0;
-    int commitIndex = 0, lastApplied = 0, leaderCommitIndex = 0;
+    int commitIndex = 1, lastApplied = 1, leaderCommitIndex = 0;
 
 
     std::map<std::string, int> nextIndex, matchIndex;
