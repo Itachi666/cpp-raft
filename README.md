@@ -6,6 +6,11 @@ For more details on Raft, you can read [In Search of an Understandable Consensus
 
 Also have some reference from [chishaxie/py-raft](https://github.com/chishaxie/py-raft).
 
+Todo：
+
+- Cluster membership changes
+- Log compaction
+
 ### Dep
 
 - CMake 3.14.4
