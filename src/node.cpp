@@ -9,7 +9,7 @@
 #include <algorithm>
 
 #define HEARTBREAK 150
-#define WAITINTTIME 500
+#define WAITINTTIME 1000
 
 
 Address::Address(std::string s, int p) : ip{std::move(s)}, port{p} {}

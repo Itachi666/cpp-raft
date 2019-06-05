@@ -26,17 +26,17 @@ $ cmake ../ && make
 ```
 
 ### Run
-
+Back to the source dir.
 ```shell
-$ ./raft node 127.0.0.1:9901 127.0.0.1:9902 127.0.0.1:9903  	#node1
-$ ./raft node 127.0.0.1:9902 127.0.0.1:9901 127.0.0.1:9903	#node2
-$ ./raft node 127.0.0.1:9903 127.0.0.1:9901 127.0.0.1:9902	#node3
-$ python ../raft_http.py 9909 127.0.0.1:9901 127.0.0.1:9902 127.0.0.1:9903
+$ make node1  	
+$ make node2	
+$ make node3	
+$ make server   
 ```
 
 ### Test
 
 ```shell
-$ python ../raft_http_test.py 127.0.0.1:9909 10 100
+$ make test
 ```
 
