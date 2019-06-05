@@ -47,7 +47,7 @@ public:
 
     void appendCommand(const std::string &command);
 
-    void tick();
+    void onTick();
 
     void messageRecv(Address &addr, Json::Value &msg);
 

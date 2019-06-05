@@ -64,7 +64,7 @@ void Node::appendCommand(const std::string &command) {
     sendAppendEntriesReq();
 }
 
-void Node::tick() {
+void Node::onTick() {
     now = clock();
     if (state == _STATE.FOLLOWER || state == _STATE.CANDIDATE) {
         if (election_dl < now) {

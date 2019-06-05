@@ -224,7 +224,7 @@ int main(int argc, char **argv) {
                 cout << "Wrong json command: " << endl << e << endl;
                 break;
             }
-            node.tick();
+            node.onTick();
         }
     }
 
